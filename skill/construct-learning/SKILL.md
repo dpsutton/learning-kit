@@ -132,6 +132,10 @@ everything against GitHub. Name contrasts honestly (a source that doesn't fit th
 - **Headless Chrome** won't go below ~500px wide; test 400px layouts inside an iframe.
 - **Font ligatures** turn `->`/`==` into glyphs in code; the kit disables them for code but keeps
   them in pseudocode on purpose.
+- **DESIGN.md can be wrong.** In hash-maps, the posts agent caught a deletion rule that loses keys
+  by simulating its figure before drawing it. Ask post agents to simulate the numbers they quote and
+  to report design errors; relay fixes to the code agents immediately (SendMessage) with a
+  regression test.
 - Generated ids and names drift between languages; that's fine. Just keep each `.build-it` honest
   (list what `lk exercises` actually generated).
 
