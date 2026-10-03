@@ -651,8 +651,10 @@ def cmd_build(a):
 def cmd_serve(a):
     cmd_build(a)
     out = (ROOT / a.out).resolve()
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(out))
-    handler.extensions_map[".wasm"] = "application/wasm"
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".wasm": "application/wasm"}
+
+    handler = functools.partial(Handler, directory=str(out))
     print(f"serving http://localhost:{a.port}/")
     http.server.ThreadingHTTPServer(("", a.port), handler).serve_forever()
 
