@@ -297,7 +297,7 @@ def learner_edits():
 def cmd_exercises(a):
     edits = learner_edits()
     if edits and not getattr(a, "force", False):
-        die("the exercise tracks have uncommitted changes, probably your solutions in progress:\n"
+        die("these exercise files differ from what lk generated (your solutions in progress?):\n"
             f"{edits}\nRegenerating would overwrite them. Commit or stash them first, or pass --force "
             "to discard them.")
     index = gen_go_exercises() + gen_clj_exercises()
