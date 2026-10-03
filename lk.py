@@ -16,6 +16,7 @@ tooling, and CI. Commands:
   lk wild-verify                       check every excerpt against its GitHub permalink
   lk anki                              export the recall cards as an Anki deck
   lk progress [NN]                     scoreboard: exercise-track tests passing per part, Go and Clojure
+  lk test NN [--lang go|clojure]       one part's exercise tests: ✓/✗ each, what failures wait on, what's new
   lk ci                                everything above that can fail, in order: the definition of green
 """
 import argparse, hashlib, html, http.server, functools, json, os, re, shutil, subprocess, sys, urllib.request
@@ -279,6 +280,113 @@ def cmd_exercises(a):
     print(f"{len(index)} exercises: " + (", ".join(f"{e['lang'][0]}{e['lesson']}:{e['id']}" for e in index) or "none yet"))
     if not a.no_check and index and not check_exercises(index):
         die("exercise checks failed")
+
+
+CLJ_TEST_SCRIPT = r"""
+(require 'clojure.test)
+(doseq [ns '[%s]]
+  (require ns)
+  (doseq [v (sort-by (comp :line meta) (filter (comp :test meta) (vals (ns-interns ns))))]
+    (let [out (java.io.StringWriter.)
+          counters (ref clojure.test/*initial-report-counters*)]
+      (binding [clojure.test/*test-out* out clojure.test/*report-counters* counters]
+        (clojure.test/test-vars [v]))
+      (println "LKTEST" (:name (meta v)) (:fail @counters) (:error @counters)
+               (.encodeToString (java.util.Base64/getEncoder) (.getBytes (str out) "UTF-8"))))))
+"""
+TODO_RE = re.compile(r"(?:TODO|not implemented yet): exercise ([\w-]+)")
+
+
+def lesson_results(n, lang):
+    """[(test name, passed?, output)] for one lesson's exercise track, in file order."""
+    import base64
+    if lang == "Go":
+        r = run(["go", "test", "-json", f"./exercises/lesson{n}/"], cwd=ROOT / "go", check=False, quiet=True)
+        order, status, out = [], {}, {}
+        for line in r.stdout.splitlines():
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            t = ev.get("Test")
+            if not t or "/" in t:
+                continue
+            if t not in out:
+                order.append(t); out[t] = ""
+            if ev.get("Action") == "output":
+                out[t] += ev.get("Output", "")
+            elif ev.get("Action") in ("pass", "fail"):
+                status[t] = ev["Action"] == "pass"
+        if not order and r.returncode:
+            return None, (r.stdout + r.stderr)[-1500:]
+        return [(t, status.get(t, False), out[t]) for t in order], ""
+    tests = sorted((ROOT / "clojure/ex/exercises" / f"lesson{n}").glob("*_test.clj"))
+    nss = " ".join(re.search(r"\(ns\s+([\w.\-]+)", t.read_text()).group(1) for t in tests)
+    if not nss:
+        return [], ""
+    # ex/ on the classpath via a one-off alias: the project's :ex alias carries the test runner's -m.
+    r = run(["clojure", "-Sdeps", '{:aliases {:lk-ex {:extra-paths ["ex"]}}}', "-M:lk-ex", "-e", CLJ_TEST_SCRIPT % nss],
+            cwd=ROOT / "clojure", check=False, quiet=True)
+    res = []
+    for line in r.stdout.splitlines():
+        if line.startswith("LKTEST "):
+            _, name, fail, err, b64 = (line.split(" ", 4) + [""])[:5]
+            res.append((name, fail == "0" and err == "0", base64.b64decode(b64).decode() if b64 else ""))
+    if not res and r.returncode:
+        return None, (r.stdout + r.stderr)[-1500:]
+    return res, ""
+
+
+def cmd_test(a):
+    """Run one part's exercise tests and show what passes, what each failure waits on, and what's new."""
+    c = cfg()
+    n = a.part.zfill(2)
+    langs = {"go": ["Go"], "clojure": ["Clojure"], "": ["Go", "Clojure"]}[a.lang]
+    index = json.loads((ROOT / "site/exercises.json").read_text()) if (ROOT / "site/exercises.json").exists() else []
+    state_file = ROOT / ".lk/last-test.json"
+    last = json.loads(state_file.read_text()) if state_file.exists() else {}
+    title = next((p["title"] for i, p in enumerate(c["parts"], 1) if nn(i) == n), "")
+    for lang in langs:
+        if lang == "Go" and not (ROOT / f"go/exercises/lesson{n}").exists():
+            continue
+        if lang == "Clojure" and not (ROOT / f"clojure/ex/exercises/lesson{n}").exists():
+            continue
+        results, err = lesson_results(n, lang)
+        key = f"{lang}:{n}"
+        if results is None:
+            print(f"\n\x1b[1mlesson{n} · {lang}\x1b[0m  \x1b[31mdoes not build/load\x1b[0m\n{err}")
+            continue
+        before = set(last.get(key, []))
+        passing = [t for t, ok, _ in results if ok]
+        new = [t for t in passing if t not in before and key in last]
+        lost = [t for t in before if t not in passing]
+        delta = f"  \x1b[32m+{len(new)} since last run\x1b[0m" if new else ""
+        print(f"\n\x1b[1mlesson{n} {title} · {lang}\x1b[0m   {len(passing)}/{len(results)} tests passing{delta}")
+        for t, ok, out in results:
+            if ok:
+                mark = "\x1b[32m✓\x1b[0m"
+                note = "  \x1b[32m← newly passing\x1b[0m" if t in new else ""
+            else:
+                mark = "\x1b[31m✗\x1b[0m"
+                waits = sorted(set(TODO_RE.findall(out)))
+                note = f"  \x1b[2mwaiting on: {', '.join(waits)}\x1b[0m" if waits else "  \x1b[2m(failing: run go test -v / see output)\x1b[0m"
+                if t in lost:
+                    note += "  \x1b[33m(was passing)\x1b[0m"
+            print(f"  {mark} {t}{note}")
+        ids = [e["id"] for e in index if e["lesson"] == n and e["lang"] == lang]
+        if ids:
+            todo = set()
+            for _, ok, out in results:
+                todo |= set(TODO_RE.findall(out))
+            src = [f for f in (ROOT / ("go/exercises" if lang == "Go" else "clojure/ex/exercises") / f"lesson{n}").rglob("*")
+                   if f.is_file() and not f.name.endswith(("_test.go", "_test.clj"))]
+            text = "".join(f.read_text() for f in src)
+            stub = lambda i: f"TODO: exercise {i}" in text
+            parts = [f"\x1b[2m○ {i}\x1b[0m" if stub(i) else f"\x1b[32m● {i}\x1b[0m" for i in ids]
+            print("  exercises: " + "  ".join(parts) + "   \x1b[2m(● written, ○ still a TODO)\x1b[0m")
+        last[key] = passing
+    state_file.parent.mkdir(exist_ok=True)
+    state_file.write_text(json.dumps(last, indent=1))
 
 
 def cmd_progress(a):
@@ -601,11 +709,13 @@ def main():
     p.add_argument("--prompt", default=""); p.add_argument("--notes", default="")
     sub.add_parser("wild-verify"); sub.add_parser("anki")
     p = sub.add_parser("progress", help="exercise-track scoreboard"); p.add_argument("part", nargs="?", default="")
+    p = sub.add_parser("test", help="run one part's exercise tests with per-test status and what's new")
+    p.add_argument("part"); p.add_argument("--lang", choices=["go", "clojure"], default="")
     a = ap.parse_args()
     ROOT = Path(a.project).resolve()
     {"new": cmd_new, "build": cmd_build, "serve": cmd_serve, "check": cmd_check, "exercises": cmd_exercises,
      "wild-add": cmd_wild_add, "wild-verify": cmd_wild_verify, "anki": cmd_anki, "ci": cmd_ci,
-     "progress": cmd_progress}[a.cmd](a)
+     "progress": cmd_progress, "test": cmd_test}[a.cmd](a)
 
 
 if __name__ == "__main__":

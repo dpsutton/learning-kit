@@ -23,6 +23,7 @@ cd ~/projects/learn/regex
 lk serve          # build _site/ (wasm included) and serve it at http://localhost:8000
 lk exercises      # regenerate the exercise track from EXERCISE markers, check it fails as designed
 lk wild-add …     # add a verbatim excerpt from a pinned clone of a real implementation
+lk test 01        # one part's exercise tests: ✓/✗ each, what each failure waits on, what's newly passing
 lk progress       # scoreboard: exercise-track tests passing per part, Go and Clojure
 lk ci             # tests, demos, CI extras, exercises, excerpts, build, headless-Chrome check, Anki
 ```

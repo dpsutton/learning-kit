@@ -3,3 +3,4 @@ _site/
 .nrepl-port
 *.apkg
 .DS_Store
+.lk/
