@@ -244,7 +244,8 @@
           const ratio = actual === 0 ? (guess === 0 ? 1 : Infinity) : guess / actual;
           good = Math.abs(ratio - 1) <= tol;
           const off = ratio >= 1 ? ratio : 1 / ratio;
-          text = good ? `You guessed <b>${fmtGuess(guess)}</b>; actual <b>${fmtGuess(actual)}</b>. Close.`
+          text = guess === actual ? `<b>${fmtGuess(actual)}</b>: exactly right.`
+            : good ? `You guessed <b>${fmtGuess(guess)}</b>; actual <b>${fmtGuess(actual)}</b>. Close.`
             : `You guessed <b>${fmtGuess(guess)}</b>; actual <b>${fmtGuess(actual)}</b>${isFinite(off) ? ` (off by ${off < 10 ? off.toFixed(1) : Math.round(off)}×)` : ""}.`;
         }
         verdict.className = "predict-verdict " + (good ? "good" : "bad");
