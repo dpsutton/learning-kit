@@ -194,6 +194,7 @@ def gen_go_exercises():
                 ls = p.read_text().split("\n"); ls[int(line) - 1] = ""; p.write_text("\n".join(ls))
         if r.returncode != 0:
             print(r.stderr); die(f"go/exercises/{src.name} does not compile")
+        subprocess.run(["gofmt", "-w", str(dest)], capture_output=True)
     return index
 
 
@@ -263,9 +264,33 @@ def check_exercises(index):
 GEN_PATHS = ["go/exercises", "clojure/ex"]
 
 
+MANIFEST = ".lk/exercises-manifest.json"
+
+
+def generated_files():
+    return sorted(f for d in GEN_PATHS if (ROOT / d).exists() for f in (ROOT / d).rglob("*") if f.is_file())
+
+
+def file_hash(f):
+    return hashlib.sha256(f.read_bytes()).hexdigest()
+
+
+def write_manifest():
+    m = {str(f.relative_to(ROOT)): file_hash(f) for f in generated_files()}
+    (ROOT / ".lk").mkdir(exist_ok=True)
+    (ROOT / MANIFEST).write_text(json.dumps(m, indent=1, sort_keys=True))
+
+
 def learner_edits():
-    """Uncommitted changes under the exercise tracks: a learner's work in progress (or nothing)."""
-    r = subprocess.run(["git", "status", "--porcelain", "--", *GEN_PATHS], cwd=ROOT, capture_output=True, text=True)
+    """Exercise files that differ from what lk last generated: a learner's work in progress.
+
+    With a manifest (written on every generation) this is exact, even before the first commit. Without
+    one (a fresh clone), fall back to git: committed exercise files modified in the working tree."""
+    mf = ROOT / MANIFEST
+    if mf.exists():
+        m = json.loads(mf.read_text())
+        return "\n".join(p for p, h in sorted(m.items()) if (ROOT / p).exists() and file_hash(ROOT / p) != h)
+    r = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", *GEN_PATHS], cwd=ROOT, capture_output=True, text=True)
     return r.stdout.strip() if r.returncode == 0 else ""
 
 
@@ -277,6 +302,7 @@ def cmd_exercises(a):
             "to discard them.")
     index = gen_go_exercises() + gen_clj_exercises()
     write_exercise_index(index)
+    write_manifest()
     print(f"{len(index)} exercises: " + (", ".join(f"{e['lang'][0]}{e['lesson']}:{e['id']}" for e in index) or "none yet"))
     if not a.no_check and index and not check_exercises(index):
         die("exercise checks failed")
