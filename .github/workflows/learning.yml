@@ -40,15 +40,15 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
       - name: lk ci
         run: .kit/bin/lk ci
-      - if: inputs.deploy && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - if: inputs.deploy && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v6.0.0
-      - if: inputs.deploy && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - if: inputs.deploy && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5.0.0
         with: { path: _site }
 
   deploy:
     needs: verify
-    if: inputs.deploy && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: inputs.deploy && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
