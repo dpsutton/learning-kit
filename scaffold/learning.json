@@ -1,0 +1,18 @@
+{
+  "title": "{{TITLE}}",
+  "headline": "",
+  "tagline": "",
+  "parts": [],
+  "demos": {
+    "clojure": ["lesson01.hello"],
+    "go": ["lesson01"]
+  },
+  "terminal": {
+    "programs": { "lesson01": "Part 1's demo" },
+    "files": {},
+    "try": [["lesson01", "run part 1's demo"]],
+    "smoke": [["lesson01", "2 \\+ 3 = 5[\\s\\S]*\\$ $", "lesson01 to finish"]]
+  },
+  "wild": { "min_sources": 3, "max_per_source": 2 },
+  "ci": { "extra": [] }
+}

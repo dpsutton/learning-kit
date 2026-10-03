@@ -1,0 +1,11 @@
+# Tests everything and deploys the site to GitHub Pages (Settings → Pages → Source: GitHub Actions).
+# All the machinery lives in learning-kit; this project holds only content.
+name: Learning
+on:
+  push: { branches: [main] }
+  pull_request:
+  workflow_dispatch:
+permissions: { contents: read, pages: write, id-token: write }
+jobs:
+  learning:
+    uses: dpsutton/learning-kit/.github/workflows/learning.yml@main

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# learning-kit CLI. Put learning-kit/bin on your PATH, then run `lk <command>` from a learning project.
+KIT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+exec uv run --quiet --script "$KIT/lk.py" "$@"

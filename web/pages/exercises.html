@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exercises — {{TITLE}}</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/site.js"></script>
+<script src="assets/common.js"></script>
+<style>
+  .ex-list { list-style: none; padding: 0; font: .95rem/1.55 var(--sans); }
+  .ex-list li { padding: .7rem 0; border-bottom: 1px solid var(--rule); }
+  .ex-file { font: .78rem/1 var(--mono); color: var(--ink-faint); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">{{TITLE}}</a>
+  <span>Exercises</span>
+  <span class="spacer"></span>
+  <button class="theme-toggle" type="button">◐ auto</button>
+</header>
+<article>
+  <div class="kicker">Now build it</div>
+  <h1>Exercises</h1>
+  <p class="dek">Each lesson's key functions with the bodies removed and the tests left in. Read the
+    post, then make the tests pass.</p>
+  <p>The exercise copies live in <code>clojure/ex/exercises/lessonNN</code> and
+    <code>go/exercises/lessonNN</code>; each blank is a <code>TODO</code> that throws, with a hint above
+    it. At a REPL: <code>clj -A:ex</code>, then <code>(require 'exercises.lessonNN.ns-test :reload)</code> and
+    <code>(clojure.test/run-tests 'exercises.lessonNN.ns-test)</code>. The reference lessons are the answer key.</p>
+{{CONTENT}}
+</article>
+</body>
+</html>

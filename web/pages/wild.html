@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>In the Wild — {{TITLE}}</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/site.js"></script>
+<script src="assets/common.js"></script>
+<script src="assets/wild/sources.js"></script>
+<style>
+  .engine-index { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 2rem; font: .9rem/1 var(--sans); }
+  .engine-index a { text-decoration: none; padding: .45rem .7rem; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink); background: var(--bg-raised); }
+  .engine-index a span { color: var(--ink-faint); margin-left: .3rem; }
+  .engine-group { border: 1px solid var(--rule); border-radius: 10px; background: var(--bg-raised); margin: 0 0 2rem; font: .95rem/1.55 var(--sans); }
+  .engine-group > h2 { margin: 0; padding: 1rem 1.2rem; font-size: 1.4rem; }
+  .engine-group > p { padding: 0 1.2rem; color: var(--ink-soft); margin: -.4rem 0 .8rem; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">{{TITLE}}</a>
+  <span>In the wild</span>
+  <span class="spacer"></span>
+  <button class="theme-toggle" type="button">◐ auto</button>
+</header>
+<article>
+  <div class="kicker">A tour of real implementations</div>
+  <h1>In the wild</h1>
+  <p class="dek">The same mechanisms you built in this series, in the source of systems people run in
+    production. Every excerpt is verbatim, pinned to a commit, and linked to its exact lines.</p>
+  <p>Best read after the matching part's exercises, with your own version open next to it. Each excerpt
+    starts with a question to answer before you read the code.</p>
+  <nav class="engine-index" id="engine-index"></nav>
+  <div id="tour"></div>
+</article>
+<script>
+  (function () {
+    const parts = EE.SITE.parts.map((_, i) => String(i + 1).padStart(2, "0"));
+    Promise.all(parts.map((p) => new Promise((r) => EE.loadWild(p, r)))).then(() => {
+      const all = Object.values(EE.WILD).flat();
+      const blurbs = window.SOURCE_BLURBS || {};
+      const by = {};
+      for (const e of all) (by[e.engine] ||= []).push(e);
+      const names = Object.keys(by).sort((a, b) => by[b].length - by[a].length || a.localeCompare(b));
+      const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const idx = document.getElementById("engine-index"), tour = document.getElementById("tour");
+      for (const name of names) {
+        idx.append(EE.el("a", { href: "#" + slug(name) }, name, EE.el("span", { text: String(by[name].length) })));
+        tour.append(EE.el("section", { class: "engine-group", id: slug(name) },
+          EE.el("h2", { text: name }), blurbs[name] ? EE.el("p", { html: blurbs[name] }) : null,
+          by[name].sort((a, b) => a.part.localeCompare(b.part)).map((e) => EE.wildCard(e, { partLink: true }))));
+      }
+      if (!all.length) tour.append(EE.el("p", { text: "No excerpts yet." }));
+    });
+  })();
+</script>
+</body>
+</html>

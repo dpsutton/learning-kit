@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/site.js"></script>
+<script src="assets/common.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">{{TITLE}}</a>
+  <span class="spacer"></span>
+  <button class="theme-toggle" type="button">◐ auto</button>
+</header>
+
+<article>
+  <div class="kicker">A series in {{PART_COUNT}} parts</div>
+  <h1>{{HEADLINE}}</h1>
+  <p class="dek">{{TAGLINE}}</p>
+
+{{INTRO}}
+
+  <ol class="toc" data-toc></ol>
+
+  <h2>Practice</h2>
+  <p>Reading about it isn't the same as building it. A few things help it stick:</p>
+  <ul>
+    <li><strong>Predict, then reveal.</strong> Figures ask for your guess before they show the answer. Being wrong first is the point.</li>
+    <li><strong><a href="exercises.html">Build it</a>.</strong> Every lesson's key functions with the bodies removed and the tests left in.</li>
+    <li><strong><a href="wild.html">In the wild</a>.</strong> The same mechanisms in the source of real implementations, verbatim and linked to the exact lines. Open each post's section after its exercises.</li>
+    <li><strong><a href="review.html">Review</a>.</strong> A few spaced-repetition cards a day from the parts you've read. Each post opens with a warm-up from the one before.</li>
+  </ul>
+
+  <h2>The code</h2>
+  <p>Each part has a standalone lesson in <code>clojure/src/lessonNN</code> and <code>go/lessonNN</code> with a
+    runnable demo; the capstone puts everything together. Or skip the install: the
+    <a href="terminal.html">terminal</a> runs the Go programs in your browser, compiled to WebAssembly.</p>
+{{OUTRO}}
+</article>
+</body>
+</html>

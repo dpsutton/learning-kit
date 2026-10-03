@@ -1,0 +1,3 @@
+check-site/node_modules/
+__pycache__/
+.DS_Store

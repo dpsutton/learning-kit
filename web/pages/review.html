@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Review — {{TITLE}}</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/site.js"></script>
+<script src="assets/common.js"></script>
+<script src="assets/review.js" defer></script>
+<style>
+  .review { font: 1rem/1.55 var(--sans); }
+  .review .parts { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.4rem; }
+  .review .parts button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .review .stats-row { margin-bottom: 1.6rem; }
+  .review .rcard { background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); padding: 1.6rem 1.6rem 1.3rem; }
+  .review .rq { font: 500 1.25rem/1.45 var(--serif); margin: .6rem 0 1rem; }
+  .review textarea { width: 100%; min-height: 4.5rem; font: .95rem/1.5 var(--sans); color: var(--ink); background: var(--bg);
+    border: 1px solid var(--rule); border-radius: 8px; padding: .6rem .7rem; resize: vertical; }
+  .review .ra { border-top: 1px dashed var(--rule); margin-top: 1rem; padding-top: 1rem; color: var(--ink-soft); }
+  .review .grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-top: 1.2rem; }
+  .review .grades button { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .7rem .4rem; }
+  .review .grades small { color: var(--ink-faint); font-size: .75rem; }
+  .review .grades .again { border-color: var(--bad); } .review .grades .good { border-color: var(--good); }
+  .review .done { text-align: center; padding: 2.5rem 1rem; }
+  .review .foot { margin-top: 2rem; font-size: .85rem; color: var(--ink-faint); }
+  @media (max-width: 520px) { .review .grades { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">{{TITLE}}</a>
+  <span>Review</span>
+  <span class="spacer"></span>
+  <button class="theme-toggle" type="button">◐ auto</button>
+</header>
+<article class="review">
+  <div class="kicker">Spaced repetition</div>
+  <h1>Review</h1>
+  <p class="dek">A few cards a day from the parts you've read, mixed together, timed so each one comes
+    back just before you'd forget it.</p>
+  <div id="review-app"></div>
+  <p class="foot">Progress is saved in this browser only. Prefer Anki? <code>uv run tools/cards_to_anki.py</code>
+    writes an <code>.apkg</code> deck from the same cards.</p>
+</article>
+</body>
+</html>

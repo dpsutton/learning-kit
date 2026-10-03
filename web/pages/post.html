@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Part {{PART_N}} · {{PART_TITLE}} — {{TITLE}}</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/site.js"></script>
+<script src="../assets/common.js"></script>
+{{HEAD_EXTRA}}
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../index.html">{{TITLE}}</a>
+  <span>Part {{PART_N}} of {{PART_COUNT}}</span>
+  <span class="spacer"></span>
+  <button class="theme-toggle" type="button">◐ auto</button>
+</header>
+
+<article>
+  <div class="kicker">Part {{PART_N}} · {{PART_TITLE}}</div>
+{{CONTENT}}
+  <div data-series></div>
+</article>
+</body>
+</html>

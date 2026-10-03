@@ -1,0 +1,30 @@
+  <h1>{{PART_TITLE}}</h1>
+  <p class="dek">One or two sentences: what you'll understand by the end.</p>
+
+  <!-- Warm-up: three recall cards from the previous part (renders nothing in part 1). -->
+  <div data-warmup></div>
+
+  <p>Prose…</p>
+
+  <h2>Section</h2>
+<pre class="pseudo">function eval(expr)
+  match expr
+    case Lit(v)  -> return v          -- pseudocode: ML-style match, -- comments
+</pre>
+  <p class="caption">Caption under a code block or figure.</p>
+
+  <!-- Figures: add <div id="viz-name"></div> here and site/viz/NN-slug.js that calls
+       EE.frame("#viz-name", "Title", "subtitle") (see the kit's references/figures.md). -->
+
+  <div class="code-ref"><p><code>clojure/src/lesson01/hello.clj</code> · <code>go/lesson01/hello.go</code>.
+    Run with <code>clojure -M -m lesson01.hello</code> / <code>go run ./cmd/lesson01</code>.</p>
+    <p>Or run it right here: <a href="../terminal.html#lesson01">open the terminal</a>.</p></div>
+
+  <div class="build-it"><p>The exercise track for this part: <code>add</code> (hints on the
+    <a href="../exercises.html">exercises page</a>). Fill in the TODOs until the tests pass:</p>
+<pre><code class="language-bash">cd clojure &amp;&amp; clojure -M:ex -d ex -n exercises.lesson01.hello-test
+cd go &amp;&amp; go test ./exercises/lesson01/</code></pre></div>
+
+  <div data-wild></div>
+
+  <div class="takeaway"><p>The one thing to remember.</p></div>

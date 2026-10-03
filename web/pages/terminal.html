@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Terminal — {{TITLE}}</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/site.js"></script>
+<script src="assets/common.js"></script>
+<script type="module" src="assets/terminal.js"></script>
+<style>
+  .term-wrap { width: min(var(--wide), calc(100vw - 2.5rem)); margin: 1.5rem 0 2rem 50%; transform: translateX(-50%);
+    background: #17161a; border-radius: 12px; box-shadow: var(--shadow); padding: 14px; border: 1px solid #34323a; }
+  #terminal { height: min(70vh, 640px); }
+  #terminal .loading { font: .9rem/1.5 var(--mono); color: #b4ada2; padding: .5rem; }
+  .term-note { font: .88rem/1.5 var(--sans); color: var(--ink-faint); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">{{TITLE}}</a>
+  <span>Terminal</span>
+  <span class="spacer"></span>
+  <button class="theme-toggle" type="button">◐ auto</button>
+</header>
+<article>
+  <div class="kicker">Run the code</div>
+  <h1>Terminal</h1>
+  <p class="dek">The Go programs from this series, compiled to WebAssembly and running in your browser.
+    Nothing runs on a server.</p>
+  <div class="term-wrap"><div id="terminal"><div class="loading">Loading terminal… (this page needs to be
+    served over HTTP: it loads WebAssembly. Locally: <code>tools/build_wasm.sh &amp;&amp; uv run python -m http.server -d docs</code>)</div></div></div>
+  <p class="term-note">The binaries are the unmodified <code>go/cmd/*</code> programs built with
+    <code>GOOS=js GOARCH=wasm</code>. They read stdin and write stdout as usual; <code>assets/terminal.js</code>
+    supplies the <code>fs</code> object Go's js/wasm runtime calls for I/O, so a read on stdin waits for you
+    to press Enter. The terminal is <a href="https://github.com/coder/ghostty-web">ghostty-web</a>:
+    Ghostty's VT emulator compiled to WebAssembly.</p>
+</article>
+</body>
+</html>
