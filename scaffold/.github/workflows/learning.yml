@@ -9,3 +9,5 @@ permissions: { contents: read, pages: write, id-token: write }
 jobs:
   learning:
     uses: dpsutton/learning-kit/.github/workflows/learning.yml@main
+    # private / local-only project? verify without publishing:
+    # with: { deploy: false }

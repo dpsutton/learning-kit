@@ -324,7 +324,7 @@
     const up = /\/posts\//.test(location.pathname) ? "../" : "";
     const due = (() => { const s = store.get("ee-sr", {}); const d = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000); return Object.values(s).filter((x) => x.due <= d).length; })();
     bar.after(
-      el("a", { class: "nav-link", href: up + "terminal.html", text: "Terminal" }),
+      SITE.terminal && SITE.terminal.programs ? el("a", { class: "nav-link", href: up + "terminal.html", text: "Terminal" }) : null,
       el("a", { class: "nav-link", href: up + "wild.html", text: "In the wild" }),
       el("a", { class: "review-link", href: up + "review.html", text: due ? `Review · ${due} due` : "Review" }));
   }
@@ -413,7 +413,9 @@
         opts.partLink ? el("a", { class: "wild-part", href: `posts/${PARTS[Number(e.part) - 1][0]}`, text: `Part ${Number(e.part)} · ${PARTS[Number(e.part) - 1][1]}` }) : null),
       e.prompt ? el("div", { class: "wild-prompt" }, el("span", { class: "predict-tag", text: "Find it" }), el("span", { html: e.prompt })) : null,
       code,
-      el("div", { class: "wild-src" }, el("a", { href: link, target: "_blank", rel: "noopener", text: `${e.repo} · ${e.path} · L${seg0.start}–${segN.end} @ ${e.sha.slice(0, 7)} ↗` })),
+      el("div", { class: "wild-src" }, e.repo.startsWith("local:")
+        ? el("span", { text: `${e.repo.slice(6).split("/").slice(-2).join("/")} · ${e.path} · L${seg0.start}–${segN.end} · local working tree (unpinned)` })
+        : el("a", { href: link, target: "_blank", rel: "noopener", text: `${e.repo} · ${e.path} · L${seg0.start}–${segN.end} @ ${e.sha.slice(0, 7)} ↗` })),
       e.notes ? el("div", { class: "wild-notes", html: e.notes }) : null);
   }
   // <div data-wild></div> in a post: a collapsed section of this part's excerpts.

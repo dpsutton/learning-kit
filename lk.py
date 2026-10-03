@@ -19,7 +19,7 @@ tooling, and CI. Commands:
   lk test NN [--lang go|clojure]       one part's exercise tests: ✓/✗ each, what failures wait on, what's new
   lk ci                                everything above that can fail, in order: the definition of green
 """
-import argparse, hashlib, html, http.server, functools, json, os, re, shutil, subprocess, sys, urllib.request
+import argparse, hashlib, html, http.server, functools, json, os, re, shutil, subprocess, sys, urllib.error, urllib.request
 from pathlib import Path
 
 KIT = Path(__file__).resolve().parent
@@ -445,10 +445,15 @@ def read_wild(f):
 
 
 def cmd_wild_add(a):
-    git = lambda *args: subprocess.run(["git", "-C", a.clone, *args], capture_output=True, text=True, check=True).stdout
-    sha = git("rev-parse", "HEAD").strip()
-    repo = re.sub(r"^(https://github.com/|git@github.com:)|\.git$", "", git("remote", "get-url", "origin").strip())
-    lines = git("show", f"HEAD:{a.path}").split("\n")
+    git = lambda *args: subprocess.run(["git", "-C", a.clone, *args], capture_output=True, text=True)
+    head, origin = git("rev-parse", "HEAD"), git("remote", "get-url", "origin")
+    if head.returncode == 0 and origin.returncode == 0:
+        sha = head.stdout.strip()
+        repo = re.sub(r"^(https://github.com/|git@github.com:)|\.git$", "", origin.stdout.strip())
+        lines = git("show", f"HEAD:{a.path}").stdout.split("\n")
+    else:  # not a git repo, no commits, or no remote: a local, unpinned source (verifiable only here)
+        sha, repo = "worktree", f"local:{Path(a.clone).resolve()}"
+        lines = (Path(a.clone) / a.path).read_text().split("\n")
     segments = []
     for rng in a.lines:
         s, e = map(int, rng.split("-"))
@@ -468,7 +473,32 @@ def cmd_wild_verify(a=None):
     c = cfg()
     lo, hi = c["wild"].get("min_sources", 3), c["wild"].get("max_per_source", 2)
     cache = Path.home() / ".cache" / "learning-kit-wild"; cache.mkdir(parents=True, exist_ok=True)
-    errors, ids, total = [], set(), 0
+    errors, warnings, ids, total = [], [], set(), 0
+
+    def wild_source(e):
+        """The source file's lines: local worktree, public raw URL, or (private repo) gh api."""
+        if e["repo"].startswith("local:"):
+            f = Path(e["repo"][6:]) / e["path"]
+            return f.read_text().split("\n") if f.exists() else None
+        if not re.fullmatch(r"[0-9a-f]{40}", e["sha"]):
+            raise ValueError("sha must be a full commit hash")
+        key = cache / hashlib.sha1(f"{e['repo']}/{e['sha']}/{e['path']}".encode()).hexdigest()
+        if not key.exists():
+            try:
+                with urllib.request.urlopen(f"https://raw.githubusercontent.com/{e['repo']}/{e['sha']}/{e['path']}", timeout=60) as r:
+                    key.write_text(r.read().decode("utf-8"))
+            except urllib.error.HTTPError as ex:
+                if ex.code != 404:
+                    raise
+                r = subprocess.run(["gh", "api", "-H", "Accept: application/vnd.github.raw",
+                                    f"repos/{e['repo']}/contents/{e['path']}?ref={e['sha']}"], capture_output=True, text=True)
+                if r.returncode != 0:
+                    if os.environ.get("CI"):  # CI tokens can't read other private repos; verified locally
+                        return None
+                    raise RuntimeError(f"not public and gh api failed: {r.stderr.strip()[:200]}")
+                key.write_text(r.stdout)
+        return key.read_text().split("\n")
+
     for f in sorted((ROOT / "site/wild").glob("[0-9][0-9].js")):
         entries, per = read_wild(f), {}
         for e in entries:
@@ -479,20 +509,19 @@ def cmd_wild_verify(a=None):
                 errors.append(f"{where}: missing {sorted(missing)}"); continue
             if e["id"] in ids: errors.append(f"{where}: duplicate id")
             ids.add(e["id"]); per[e["engine"]] = per.get(e["engine"], 0) + 1
-            if not re.fullmatch(r"[0-9a-f]{40}", e["sha"]): errors.append(f"{where}: sha must be a full commit hash")
-            key = cache / hashlib.sha1(f"{e['repo']}/{e['sha']}/{e['path']}".encode()).hexdigest()
             try:
-                if not key.exists():
-                    with urllib.request.urlopen(f"https://raw.githubusercontent.com/{e['repo']}/{e['sha']}/{e['path']}", timeout=60) as r:
-                        key.write_text(r.read().decode("utf-8"))
-                src = key.read_text().split("\n")
+                src = wild_source(e)
             except Exception as ex:
                 errors.append(f"{where}: cannot fetch source: {ex}"); continue
+            if src is None:
+                warnings.append(f"{where}: source {e['repo']} not readable here (local or private); skipped"); continue
             for s in e["segments"]:
                 if s["code"] != "\n".join(src[s["start"] - 1:s["end"]]):
                     errors.append(f"{where}: L{s['start']}-{s['end']} is not verbatim at {e['repo']}@{e['sha'][:7]}:{e['path']}")
         if entries and len(per) < lo: errors.append(f"{f.name}: {len(per)} sources (want ≥{lo})")
         errors += [f"{f.name}: {k} appears {n} times (max {hi})" for k, n in per.items() if n > hi]
+    for w in warnings:
+        print(f"  warning: {w}")
     if errors:
         print("\n".join(errors)); die("wild-verify failed")
     print(f"  OK: {total} excerpts, all verbatim at their permalinks")
@@ -566,7 +595,10 @@ def cmd_build(a):
     topic = '<script src="{p}assets/topic.js"></script>' if (site / "topic.js").exists() else ""
     intro = (site / "intro.html").read_text() if (site / "intro.html").exists() else ""
     outro = (site / "outro.html").read_text() if (site / "outro.html").exists() else ""
-    (out / "index.html").write_text(fill((pages / "index.html").read_text(), INTRO=intro, OUTRO=outro, **common))
+    note = (' Or skip the install: the <a href="terminal.html">terminal</a> runs the Go programs in your browser, '
+            "compiled to WebAssembly.") if c["terminal"].get("programs") else ""
+    (out / "index.html").write_text(fill((pages / "index.html").read_text(), INTRO=intro, OUTRO=outro,
+                                         TERMINAL_NOTE=note, **common))
     for name in ("review", "wild", "terminal"):
         (out / f"{name}.html").write_text(fill((pages / f"{name}.html").read_text(), **common))
     (out / "exercises.html").write_text(fill((pages / "exercises.html").read_text(), CONTENT=render_exercises_page(c), **common))
