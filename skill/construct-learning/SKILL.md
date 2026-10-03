@@ -100,8 +100,10 @@ lesson files plus `../terminal.html#lessonNN`, a `.build-it` naming the exercise
 
 ### 6. In the wild (after posts exist)
 
-Real-source excerpts, one collapsed section per post, opened after the exercises. Pick 4–9 real
-implementations relevant to the topic and spread them (`wild.min_sources`/`max_per_source` enforce
+Real-source excerpts, one collapsed section per post, opened after the exercises. Pick 4–9 real,
+mature, external implementations relevant to the topic, never the learner's own projects or
+prototypes (that's training on synthetic data: the point is to measure our designs against systems
+that survived production), and spread them (`wild.min_sources`/`max_per_source` enforce
 it). Blobless-clone them pinned: `git clone --depth 1 --filter=blob:none --no-checkout <url>
 /tmp/lk-sources/<name>`; read files with `git -C … show HEAD:path`. Agents add excerpts **only** via
 `lk wild-add` (copies code verbatim; never hand-typed), each with a "find it" prompt and notes that
